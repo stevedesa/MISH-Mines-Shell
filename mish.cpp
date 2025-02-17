@@ -266,6 +266,138 @@ void executeBuiltIn(const Command &cmd)
     }
 }
 
+void setupRedirection(const Command &cmd)
+{
+    if (cmd.redirectedInputFromFile)
+    {
+        int fd = open(cmd.redirectedInputFileName.c_str(), O_RDONLY);
+        if (fd == -1)
+        {
+            throw ShellError("Error opening input file: " + cmd.redirectedInputFileName);
+        }
+        if (dup2(fd, STDIN_FILENO) == -1)
+        {
+            close(fd);
+            throw ShellError("Error setting up input redirection");
+        }
+        close(fd);
+    }
+
+    if (cmd.redirectOutputToFile)
+    {
+        int flags = O_WRONLY | O_CREAT;
+        flags |= cmd.appendOutput ? O_APPEND : O_TRUNC;
+
+        int fd = open(cmd.redirectOutputFileName.c_str(), flags, 0644);
+        if (fd == -1)
+        {
+            throw ShellError("Error opening output file: " + cmd.redirectOutputFileName);
+        }
+        if (dup2(fd, STDOUT_FILENO) == -1)
+        {
+            close(fd);
+            throw ShellError("Error setting up output redirection");
+        }
+        close(fd);
+    }
+}
+
+void executePipeline(vector<Command> &pipeline)
+{
+    int n = pipeline.size();
+    vector<pid_t> pids(n);
+    vector<array<int, 2>> pipes(n - 1);
+
+    // Create pipes
+    for (int i = 0; i < n - 1; i++)
+    {
+        if (pipe(pipes[i].data()) == -1)
+        {
+            throw ShellError("Failed to create pipe");
+        }
+    }
+
+    // Create processes
+    for (int i = 0; i < n; i++)
+    {
+        pids[i] = fork();
+        if (pids[i] == -1)
+        {
+            throw ShellError("Fork failed");
+        }
+
+        if (pids[i] == 0)
+        { // Child process
+            try
+            {
+                // Setup pipes
+                if (i > 0)
+                {
+                    if (dup2(pipes[i - 1][0], STDIN_FILENO) == -1)
+                    {
+                        throw ShellError("Failed to set up pipe input");
+                    }
+                }
+                if (i < n - 1)
+                {
+                    if (dup2(pipes[i][1], STDOUT_FILENO) == -1)
+                    {
+                        throw ShellError("Failed to set up pipe output");
+                    }
+                }
+
+                // Close all pipe fds
+                for (auto &p : pipes)
+                {
+                    close(p[0]);
+                    close(p[1]);
+                }
+
+                // Handle redirections
+                setupRedirection(pipeline[i]);
+
+                // Convert tokens to char* array for execvp
+                vector<char *> args;
+                for (const auto &token : pipeline[i].tokens)
+                {
+                    args.push_back(const_cast<char *>(token.c_str()));
+                }
+                args.push_back(nullptr);
+
+                execvp(args[0], args.data());
+                throw ShellError("Failed to execute command: " + string(args[0]));
+            }
+            catch (const ShellError &e)
+            {
+                cerr << "Error in child process: " << e.what() << endl;
+                exit(1);
+            }
+        }
+    }
+
+    // Parent process
+    // Close all pipe fds
+    for (auto &p : pipes)
+    {
+        close(p[0]);
+        close(p[1]);
+    }
+
+    // Wait for all processes unless background
+    if (!pipeline.back().isBackground)
+    {
+        for (pid_t pid : pids)
+        {
+            int status;
+            waitpid(pid, &status, 0);
+            if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+            {
+                handleError("Command exited with non-zero status: " + to_string(WEXITSTATUS(status)));
+            }
+        }
+    }
+}
+
 // Function to execute a sequence of commands, including handling built-in commands
 void executeCommands(const vector<Command> &commands)
 {
