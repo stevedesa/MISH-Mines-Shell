@@ -1,77 +1,13 @@
 #include "mish.h"
 using namespace std;
 
-// Global environment object
-Environment env;
-
-// Function to handle errors and optionally terminate the program
-void handleError(const string &message, bool fatal)
-{
-    cerr << "Error: " << message << endl;
-    if (errno != 0)
-    {
-        perror("System error");
-    }
-    if (fatal)
-    {
-        exit(1);
-    }
-}
-
-// Constructor to initialize environment variables from system
-Environment::Environment()
-{
-    for (char **env = environ; *env != nullptr; env++)
-    {
-        string envStr(*env);
-        size_t pos = envStr.find('=');
-        if (pos != string::npos)
-        {
-            vars[envStr.substr(0, pos)] = envStr.substr(pos + 1);
-        }
-    }
-}
-
-// Set an environment variable
-bool Environment::set(const string &name, const string &value)
-{
-    vars[name] = value;
-    return setenv(name.c_str(), value.c_str(), 1) == 0;
-}
-
-// Unset an environment variable
-bool Environment::unset(const string &name)
-{
-    auto it = vars.find(name);
-    if (it != vars.end())
-    {
-        vars.erase(it);
-        unsetenv(name.c_str());
-        return true;
-    }
-    return false;
-}
-
-// Retrieve an environment variable's value
-string Environment::get(const string &name) const
-{
-    auto it = vars.find(name);
-    return (it != vars.end()) ? it->second : "";
-}
-
-// Get all stored environment variables
-const map<string, string> &Environment::getAll() const
-{
-    return vars;
-}
-
 // Function to split input string into tokens while handling quotes and escape characters
 vector<string> tokenize(const string &input)
 {
-    vector<string> tokens;
-    string current_token;
-    bool in_quotes = false;
-    bool escaped = false;
+    vector<string> tokens;  // Store resulting tokens
+    string current_token;   // Current token being build
+    bool in_quotes = false; // Track if we're inside quotes
+    bool escaped = false;   // Track if the next character is escaped
 
     for (size_t i = 0; i < input.length(); i++)
     {
@@ -116,7 +52,7 @@ vector<string> tokenize(const string &input)
 
     if (in_quotes)
     {
-        throw ShellError("Unterminated quote");
+        throw ShellError("Unterminated quote"); // Throw error
     }
 
     return tokens;
@@ -125,16 +61,19 @@ vector<string> tokenize(const string &input)
 // Function to validate parsed command structure
 bool validateCommand(const Command &cmd)
 {
+    // Check if output redirection and pipe start are both set
     if (cmd.redirectOutputToFile && cmd.isPipeStart)
     {
         handleError("Cannot combine output redirection with pipe output");
         return false;
     }
+    // Check if input redirection and pipe end are both set
     if (cmd.redirectedInputFromFile && cmd.isPipeEnd)
     {
         handleError("Cannot combine input redirection with pipe input");
         return false;
     }
+    // Check if the command has no tokens
     if (cmd.tokens.empty())
     {
         handleError("Empty command");
@@ -146,8 +85,8 @@ bool validateCommand(const Command &cmd)
 // Function to parse tokens into commands with support for pipes, redirections, and background execution
 vector<Command> parseTokens(const vector<string> &tokens)
 {
-    vector<Command> commands;
-    Command currentCommand;
+    vector<Command> commands; // Store resulting commands
+    Command currentCommand;   // Current command being built
 
     for (size_t i = 0; i < tokens.size(); i++)
     {
@@ -164,7 +103,12 @@ vector<Command> parseTokens(const vector<string> &tokens)
         }
         else if (tokens[i] == "&") // Handle background execution
         {
-            currentCommand.isBackground = true;
+            if (!currentCommand.tokens.empty())
+            {
+                currentCommand.isBackground = true;
+                commands.push_back(currentCommand);
+                currentCommand = Command();
+            }
         }
         else if (tokens[i] == ">" || tokens[i] == ">>") // Handle output redirection
         {
@@ -199,6 +143,7 @@ vector<Command> parseTokens(const vector<string> &tokens)
         }
     }
 
+    // For command left after loop
     if (!currentCommand.tokens.empty())
     {
         commands.push_back(currentCommand);
@@ -216,7 +161,7 @@ vector<Command> parseTokens(const vector<string> &tokens)
     return commands;
 }
 
-// Function to check if a command is built-in (e.g., cd, exit, variable assignment)
+// Function to check if a command is built-in (ex. cd, exit, variable assignment)
 bool isBuiltInCommand(const string &cmd)
 {
     return cmd == "cd" || cmd == "exit" || (cmd.find('=') != string::npos);
@@ -230,7 +175,7 @@ void executeBuiltIn(const Command &cmd)
 
     string command = cmd.tokens[0];
 
-    if (command == "exit")
+    if (command == "exit") // Handle exit case
     {
         if (cmd.tokens.size() > 1)
         {
@@ -238,13 +183,13 @@ void executeBuiltIn(const Command &cmd)
         }
         exit(0);
     }
-    else if (command == "cd")
+    else if (command == "cd") // Handle cd case
     {
         if (cmd.tokens.size() != 2)
         {
             throw ShellError("cd command requires exactly one argument");
         }
-        if (chdir(cmd.tokens[1].c_str()) != 0)
+        if (chdir(cmd.tokens[1].c_str()) != 0) // Change working directory
         {
             throw ShellError("cd failed: " + string(strerror(errno)));
         }
@@ -285,7 +230,9 @@ void setupRedirection(const Command &cmd)
 
     if (cmd.redirectOutputToFile)
     {
+        // Set the flags for opening the output file
         int flags = O_WRONLY | O_CREAT;
+        // Set append or truncate mode
         flags |= cmd.appendOutput ? O_APPEND : O_TRUNC;
 
         int fd = open(cmd.redirectOutputFileName.c_str(), flags, 0644);
@@ -302,11 +249,12 @@ void setupRedirection(const Command &cmd)
     }
 }
 
+// Function to execute a pipeline of commands
 void executePipeline(vector<Command> &pipeline)
 {
     int n = pipeline.size();
-    vector<pid_t> pids(n);
-    vector<array<int, 2>> pipes(n - 1);
+    vector<pid_t> pids(n);              // Store process IDs
+    vector<array<int, 2>> pipes(n - 1); // Store pipe file descriptors
 
     // Create pipes
     for (int i = 0; i < n - 1; i++)
@@ -331,6 +279,7 @@ void executePipeline(vector<Command> &pipeline)
             try
             {
                 // Setup pipes
+                // If this is not the first command, redirect input from the previous pipe
                 if (i > 0)
                 {
                     if (dup2(pipes[i - 1][0], STDIN_FILENO) == -1)
@@ -338,6 +287,7 @@ void executePipeline(vector<Command> &pipeline)
                         throw ShellError("Failed to set up pipe input");
                     }
                 }
+                // If this is not the last command, redirect output to the next pipe
                 if (i < n - 1)
                 {
                     if (dup2(pipes[i][1], STDOUT_FILENO) == -1)
@@ -349,8 +299,8 @@ void executePipeline(vector<Command> &pipeline)
                 // Close all pipe fds
                 for (auto &p : pipes)
                 {
-                    close(p[0]);
-                    close(p[1]);
+                    close(p[0]); // Rear end
+                    close(p[1]); // Write end
                 }
 
                 // Handle redirections
@@ -360,7 +310,7 @@ void executePipeline(vector<Command> &pipeline)
                 vector<char *> args;
                 for (const auto &token : pipeline[i].tokens)
                 {
-                    args.push_back(const_cast<char *>(token.c_str()));
+                    args.push_back(const_cast<char *>(token.c_str())); // Convert to C string
                 }
                 args.push_back(nullptr);
 
@@ -379,29 +329,36 @@ void executePipeline(vector<Command> &pipeline)
     // Close all pipe fds
     for (auto &p : pipes)
     {
-        close(p[0]);
-        close(p[1]);
+        close(p[0]); // Read end
+        close(p[1]); // Write end
     }
 
-    // Wait for all processes unless background
+    // For background processes, only wait for the last process in the pipeline
     if (!pipeline.back().isBackground)
     {
         for (pid_t pid : pids)
         {
             int status;
-            waitpid(pid, &status, 0);
+            waitpid(pid, &status, 0); // Wait for each child process to finish
+
+            // Check if the process exited with an error
             if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
             {
                 handleError("Command exited with non-zero status: " + to_string(WEXITSTATUS(status)));
             }
         }
     }
+    else
+    {
+        // For background processes, print the process ID and continue
+        cout << "[" << pids.back() << "] " << pipeline.back().tokens[0] << " &" << endl;
+    }
 }
 
 // Function to execute a sequence of commands, including handling built-in commands
 void executeCommands(const vector<Command> &commands)
 {
-    vector<Command> current_pipeline;
+    vector<Command> current_pipeline; // Store current pipeline of commands
 
     for (const auto &cmd : commands)
     {
@@ -435,18 +392,20 @@ void executeCommands(const vector<Command> &commands)
     }
 }
 
+// Function to run the shell in interactive mode
 void interactiveMode()
 {
     string input;
+    // Buffer to store the current working directory
     char cwd[PATH_MAX];
 
     while (true)
     {
-        if (getcwd(cwd, sizeof(cwd)) != nullptr)
+        if (getcwd(cwd, sizeof(cwd)) != nullptr) // Get curr working directory
         {
             cout << "mish:" << cwd << "> ";
         }
-        else
+        else // Print a basic prompt if the directory cannot be retrieved
         {
             cout << "mish> ";
         }
@@ -473,6 +432,7 @@ void interactiveMode()
     }
 }
 
+// Function to run the shell in script mode
 void scriptMode(const string &fileName)
 {
     ifstream file(fileName);
@@ -506,6 +466,7 @@ void scriptMode(const string &fileName)
     }
 }
 
+// Main function to run the shell
 int main(int argc, char *argv[])
 {
     try
@@ -527,6 +488,7 @@ int main(int argc, char *argv[])
             cout << "*******************************************" << endl;
             cout << "       WELCOME TO MISH [MINES-SHELL]       " << endl;
             cout << "*******************************************" << endl;
+            cout << endl;
             interactiveMode();
         }
         else
@@ -535,6 +497,7 @@ int main(int argc, char *argv[])
             cout << "       WELCOME TO MISH [MINES-SHELL]       " << endl;
             cout << "          YOUR SCRIPT IS RUNNING           " << endl;
             cout << "*******************************************" << endl;
+            cout << endl;
             scriptMode(argv[1]);
         }
     }
