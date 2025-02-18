@@ -2,6 +2,7 @@
 #define MISH_H
 
 #include <iostream>
+#include <array>
 #include <vector>
 #include <string>
 #include <regex>
