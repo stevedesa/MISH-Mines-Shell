@@ -60,4 +60,16 @@ public:
 // Global environment object
 extern Environment env;
 
+// Main functions
+vector<string> tokenize(const string &input);
+bool validateCommand(const Command &cmd);
+vector<Command> parseTokens(const vector<string> &tokens);
+bool isBuiltInCommand(const string &cmd);
+void executeBuiltIn(const Command &cmd);
+void setupRedirection(const Command &cmd);
+void executePipeline(vector<Command> &pipeline);
+void executeCommands(const vector<Command> &commands);
+void interactiveMode();
+void scriptMode(const string &fileName);
+
 #endif // MISH_H
