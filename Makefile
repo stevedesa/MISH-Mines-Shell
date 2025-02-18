@@ -1,8 +1,5 @@
 # Compiler
-CXX = gcc
-
-# Compiler flags
-CXXFLAGS = -Wall -I. -g 
+CXX = g++
 
 # Source files
 SRCS = main.cpp helper.cpp
@@ -18,11 +15,11 @@ all: $(TARGET)
 
 # Link the executable
 $(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ $(OBJS)
+	$(CXX) -o $@ $(OBJS)
 
 # Compile source files into object files
 %.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) -c $< -o $@
 
 # Clean up generated files
 clean:
