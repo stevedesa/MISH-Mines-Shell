@@ -1,6 +1,8 @@
 #include "mish.h"
 using namespace std;
 
+bool showPath = false;
+
 // Function to split input string into tokens while handling quotes and escape characters
 vector<string> tokenize(const string &input)
 {
@@ -401,11 +403,11 @@ void interactiveMode()
 
     while (true)
     {
-        if (getcwd(cwd, sizeof(cwd)) != nullptr) // Get curr working directory
+        if (showPath && getcwd(cwd, sizeof(cwd)) != nullptr)
         {
             cout << "mish:" << cwd << "> ";
         }
-        else // Print a basic prompt if the directory cannot be retrieved
+        else
         {
             cout << "mish> ";
         }
@@ -471,9 +473,15 @@ int main(int argc, char *argv[])
 {
     try
     {
+        // Parse command line arguments
+        if (argc == 2 && string(argv[1]) == "-p")
+        {
+            showPath = true;
+        }
+
         if (argc > 2)
         {
-            handleError("Usage: ./mish [script.sh]", true);
+            handleError("Usage: ./mish [-p] or [script.sh]", true);
         }
 
         // Initialize environment
@@ -483,12 +491,11 @@ int main(int argc, char *argv[])
             env.set("PATH", path);
         }
 
-        if (argc == 1)
+        if (scriptArgIndex >= argc)
         {
             cout << "*******************************************" << endl;
             cout << "       WELCOME TO MISH [MINES-SHELL]       " << endl;
             cout << "*******************************************" << endl;
-            cout << endl;
             interactiveMode();
         }
         else
@@ -497,8 +504,7 @@ int main(int argc, char *argv[])
             cout << "       WELCOME TO MISH [MINES-SHELL]       " << endl;
             cout << "          YOUR SCRIPT IS RUNNING           " << endl;
             cout << "*******************************************" << endl;
-            cout << endl;
-            scriptMode(argv[1]);
+            scriptMode(argv[scriptArgIndex]);
         }
     }
     catch (const exception &e)

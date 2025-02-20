@@ -61,6 +61,9 @@ public:
 // Global environment object
 extern Environment env;
 
+// Track if path should be shown
+extern bool showPath;
+
 // Main functions
 vector<string> tokenize(const string &input);
 bool validateCommand(const Command &cmd);
