@@ -48,7 +48,7 @@ MISH is a simple command-line interpreter (shell) implemented in C++. It support
 
 ### Prerequisites
 - A Unix-like operating system (Linux, macOS, etc.).
-- A C++ compiler (e.g., `g++`).
+- A C++ compiler (`g++` preferably).
 
 ### Compilation
 To compile MISH, navigate to the project directory and run:
