@@ -474,14 +474,16 @@ int main(int argc, char *argv[])
     try
     {
         // Parse command line arguments
-        if (argc == 2 && string(argv[1]) == "-p")
+        int scriptArgIndex = 1;
+        if (argc > 1 && string(argv[1]) == "-p")
         {
             showPath = true;
+            scriptArgIndex++;
         }
 
-        if (argc > 2)
+        if (argc > scriptArgIndex + 1)
         {
-            handleError("Usage: ./mish [-p] or [script.sh]", true);
+            handleError("Usage: ./mish [-p] [script.sh]", true);
         }
 
         // Initialize environment
@@ -496,6 +498,7 @@ int main(int argc, char *argv[])
             cout << "*******************************************" << endl;
             cout << "       WELCOME TO MISH [MINES-SHELL]       " << endl;
             cout << "*******************************************" << endl;
+            cout << endl;
             interactiveMode();
         }
         else
@@ -504,6 +507,7 @@ int main(int argc, char *argv[])
             cout << "       WELCOME TO MISH [MINES-SHELL]       " << endl;
             cout << "          YOUR SCRIPT IS RUNNING           " << endl;
             cout << "*******************************************" << endl;
+            cout << endl;
             scriptMode(argv[scriptArgIndex]);
         }
     }
