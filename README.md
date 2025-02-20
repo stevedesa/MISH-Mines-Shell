@@ -82,11 +82,6 @@ You can enable the display of the current working directory in the prompt by usi
 ```bash
 ./mish -p
 ```
-or
-
-```bash
-./mish -p script.sh
-```
 
 ## Special Features
 
