@@ -498,7 +498,6 @@ int main(int argc, char *argv[])
             cout << "*******************************************" << endl;
             cout << "       WELCOME TO MISH [MINES-SHELL]       " << endl;
             cout << "*******************************************" << endl;
-            cout << endl;
             interactiveMode();
         }
         else
@@ -507,7 +506,6 @@ int main(int argc, char *argv[])
             cout << "       WELCOME TO MISH [MINES-SHELL]       " << endl;
             cout << "          YOUR SCRIPT IS RUNNING           " << endl;
             cout << "*******************************************" << endl;
-            cout << endl;
             scriptMode(argv[scriptArgIndex]);
         }
     }
