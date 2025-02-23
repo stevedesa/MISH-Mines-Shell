@@ -354,11 +354,8 @@ void executePipeline(vector<Command> &pipeline)
     }
     else
     {
-        // For background processes, print the process ID and continue
-        cout << "[" << pids.back() << "] " << pipeline.back().tokens[0] << " &" << endl;
-
-        // Ensure the background process message is displayed before the prompt
-        cout.flush();
+        // For background processes, print the process ID without a newline
+        cout << "[" << pids.back() << "] " << pipeline.back().tokens[0] << " &" << flush;
     }
 }
 
@@ -408,19 +405,17 @@ void interactiveMode()
 
     while (true)
     {
-        // Flush the output stream before displaying the prompt
-        cout.flush();
+        // Always print a newline before the prompt to ensure clean output
+        cout << endl;
 
         if (showPath && getcwd(cwd, sizeof(cwd)) != nullptr)
         {
-            cout << "mish:" << cwd << "> ";
+            cout << "mish:" << cwd << "> " << flush;
         }
         else
         {
-            cout << "mish> ";
+            cout << "mish> " << flush;
         }
-        // Flush again after writing the prompt
-        cout.flush();
 
         if (!getline(cin, input))
             break;
