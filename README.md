@@ -26,7 +26,7 @@ MISH is a simple command-line interpreter (shell) implemented in C++. It support
 
 ### 5. Background Execution
 - Commands can be executed in the background using the `&` operator.
-- Example: `cmd1 & cmd2 &`
+- Example: `cmd1 & cmd2 & cmd3`
 
 ### 6. Command Sequencing
 - Commands can be executed sequentially using the `;` operator.
@@ -47,8 +47,8 @@ MISH is a simple command-line interpreter (shell) implemented in C++. It support
 ## How to Run MISH
 
 ### Prerequisites
-- A Unix-like operating system (Linux, macOS, etc.).
-- A C++ compiler (`g++` preferably).
+- A Unix-like operating system (`Linux` was used to develop and test this application).
+- A C++ compiler (`g++` preferably. If you'd like to use `gcc`, there's commented-out code for this in the makefile).
 
 ### Compilation
 To compile MISH, navigate to the project directory and run:
@@ -166,5 +166,5 @@ Error: cd command requires exactly one argument
 
 ## Limitations
 - MISH does not support advanced shell features like wildcards (`*`), command substitution, or scripting constructs (e.g., loops, conditionals).
-- Error messages could be more detailed in some cases.
+- Error messages aren't the most detailed (Could've been more detailed in some cases, but it's a small project :)).
 
