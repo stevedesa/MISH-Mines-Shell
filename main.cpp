@@ -414,17 +414,6 @@ void executePipeline(vector<Command> &pipeline)
 
         // Print process ID for background process
         cout << "[" << pids.back() << "] " << pipeline.back().tokens[0] << " &" << endl;
-
-        // Print prompt immediately for background processes
-        char cwd[PATH_MAX];
-        if (showPath && getcwd(cwd, sizeof(cwd)) != nullptr)
-        {
-            cout << "mish:" << cwd << "> " << flush;
-        }
-        else
-        {
-            cout << "mish> " << flush;
-        }
     }
 }
 
@@ -449,26 +438,45 @@ void executeCommands(const vector<Command> &commands)
                 {
                     cout << "[builtin] " << cmd.tokens[0] << " &" << endl;
                 }
-                last_was_background = cmd.isBackground;
                 continue;
             }
 
             // Add command to pipeline
             current_pipeline.push_back(cmd);
+            background_command |= cmd.isBackground;
 
+            // Execute pipeline if this is the end of a pipeline or a standalone command
             // Execute pipeline if this is the end of a pipeline or a standalone command
             if (!cmd.isPipeStart)
             {
                 executePipeline(current_pipeline);
-                last_was_background = cmd.isBackground;
+
+                // Print prompt only for background commands
+                if (background_command)
+                {
+                    char cwd[PATH_MAX];
+                    if (showPath && getcwd(cwd, sizeof(cwd)) != nullptr)
+                    {
+                        cout << "mish:" << cwd << "> " << flush;
+                    }
+                    else
+                    {
+                        cout << "mish> " << flush;
+                    }
+                }
+
                 current_pipeline.clear();
+                background_command = false;
             }
         }
         catch (const ShellError &e)
         {
             handleError(e.what());
             current_pipeline.clear();
+            background_command = false;
         }
+
+        cout << flush;
     }
 
     // After all commands are executed, if the last one was not a background command,
