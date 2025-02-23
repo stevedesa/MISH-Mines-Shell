@@ -421,7 +421,7 @@ void executePipeline(vector<Command> &pipeline)
 void executeCommands(const vector<Command> &commands)
 {
     vector<Command> current_pipeline; // Store current pipeline of commands
-    bool last_was_background = false; // Track if the last command was a background command
+    bool background_command = false;  // Track if command was a background command
 
     for (const auto &cmd : commands)
     {
