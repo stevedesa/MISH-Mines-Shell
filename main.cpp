@@ -353,6 +353,9 @@ void executePipeline(vector<Command> &pipeline)
                 // Handle redirections
                 setupRedirection(pipeline[i]);
 
+                // Make sure stdout is line buffered
+                setvbuf(stdout, nullptr, _IOLBF, 0);
+
                 // Convert tokens to char* array for execvp
                 vector<char *> args;
                 for (const auto &token : pipeline[i].tokens)
@@ -391,7 +394,7 @@ void executePipeline(vector<Command> &pipeline)
             // Check if the process exited with an error
             if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
             {
-                handleError("Command exited with non-zero status: " + to_string(WEXITSTATUS(status)));
+                handleError("Command exited with status: " + to_string(WEXITSTATUS(status)));
             }
         }
     }
@@ -399,6 +402,20 @@ void executePipeline(vector<Command> &pipeline)
     {
         // For background processes, print the process ID without a newline
         cout << "[" << pids.back() << "] " << pipeline.back().tokens[0] << " &" << endl;
+        cout.flush();
+
+        // Create a separate process to wait for the pipeline
+        pid_t wait_pid = fork();
+        if (wait_pid == 0)
+        { // Child process for waiting
+            // Wait for all processes in the pipeline
+            for (pid_t pid : pids)
+            {
+                int status;
+                waitpid(pid, &status, 0);
+            }
+            exit(0);
+        }
     }
 }
 
@@ -460,8 +477,14 @@ void interactiveMode()
     // Buffer to store the current working directory
     char cwd[PATH_MAX];
 
+    // Make sure stdout is line buffered
+    setvbuf(stdout, nullptr, _IOLBF, 0);
+
     while (true)
     {
+        // Force flush before printing prompt
+        cout.flush();
+
         if (showPath && getcwd(cwd, sizeof(cwd)) != nullptr)
         {
             cout << "mish:" << cwd << "> " << flush;
@@ -472,7 +495,10 @@ void interactiveMode()
         }
 
         if (!getline(cin, input))
+        {
+            cout << endl;
             break;
+        }
 
         try
         {
