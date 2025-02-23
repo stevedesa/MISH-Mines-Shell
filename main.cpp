@@ -416,18 +416,18 @@ void executePipeline(vector<Command> &pipeline)
         // For background processes, print the process ID without a newline
         cout << "[" << pids.back() << "] " << pipeline.back().tokens[0] << " &" << endl;
         cout.flush();
+    }
 
-        // Buffer to store the current working directory
-        char cwd[PATH_MAX];
+    // Buffer to store the current working directory
+    char cwd[PATH_MAX];
 
-        if (showPath && getcwd(cwd, sizeof(cwd)) != nullptr)
-        {
-            cout << "mish:" << cwd << "> " << flush;
-        }
-        else
-        {
-            cout << "mish> " << flush;
-        }
+    if (showPath && getcwd(cwd, sizeof(cwd)) != nullptr)
+    {
+        cout << "mish:" << cwd << "> " << flush;
+    }
+    else
+    {
+        cout << "mish> " << flush;
     }
 }
 
