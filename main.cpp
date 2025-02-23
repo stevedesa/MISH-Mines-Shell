@@ -339,7 +339,6 @@ void executePipeline(vector<Command> &pipeline)
                     {
                         throw ShellError("Failed to set up pipe input");
                     }
-                    close(pipes[i - 1][0]);
                 }
                 // If this is not the last command, redirect output to the next pipe
                 if (i < n - 1)
@@ -348,7 +347,6 @@ void executePipeline(vector<Command> &pipeline)
                     {
                         throw ShellError("Failed to set up pipe output");
                     }
-                    close(pipes[i][1]);
                 }
 
                 // Close all pipe fds
@@ -408,29 +406,16 @@ void executePipeline(vector<Command> &pipeline)
     }
     else
     {
+        // Set process group for each process in pipeline
         for (pid_t pid : pids)
         {
-            setpgid(pid, pid); // Set a new process group to detach from the shell
+            setpgid(pid, pid);
         }
 
-        // For background processes, print the process ID without a newline
+        // Print process ID for background process
         cout << "[" << pids.back() << "] " << pipeline.back().tokens[0] << " &" << endl;
-        cout.flush();
 
-        // IMMEDIATELY return control to the shell
-        return;
-    }
-
-    // Print the prompt again after background processes complete
-    if (pipeline.back().isBackground)
-    {
-        // Wait for all background processes to complete
-        for (pid_t pid : pids)
-        {
-            int status;
-            waitpid(pid, &status, WNOHANG); // Non-blocking wait
-        }
-
+        // Print prompt immediately for background processes
         char cwd[PATH_MAX];
         if (showPath && getcwd(cwd, sizeof(cwd)) != nullptr)
         {
