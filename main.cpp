@@ -355,7 +355,7 @@ void executePipeline(vector<Command> &pipeline)
     else
     {
         // For background processes, print the process ID without a newline
-        cout << "[" << pids.back() << "] " << pipeline.back().tokens[0] << " &" << flush;
+        cout << "[" << pids.back() << "] " << pipeline.back().tokens[0] << " &" << endl;
     }
 }
 
@@ -363,6 +363,7 @@ void executePipeline(vector<Command> &pipeline)
 void executeCommands(const vector<Command> &commands)
 {
     vector<Command> current_pipeline; // Store current pipeline of commands
+    bool last_was_background = false; // Track if the last command was a background command
 
     for (const auto &cmd : commands)
     {
@@ -375,6 +376,11 @@ void executeCommands(const vector<Command> &commands)
             if (isBuiltInCommand(cmd.tokens[0]))
             {
                 executeBuiltIn(cmd);
+                if (cmd.isBackground)
+                {
+                    cout << "[builtin] " << cmd.tokens[0] << " &" << endl;
+                }
+                last_was_background = cmd.isBackground;
                 continue;
             }
 
@@ -385,6 +391,7 @@ void executeCommands(const vector<Command> &commands)
             if (!cmd.isPipeStart)
             {
                 executePipeline(current_pipeline);
+                last_was_background = cmd.isBackground;
                 current_pipeline.clear();
             }
         }
@@ -393,6 +400,13 @@ void executeCommands(const vector<Command> &commands)
             handleError(e.what());
             current_pipeline.clear();
         }
+    }
+
+    // After all commands are executed, if the last one was not a background command,
+    // or if we're in interactive mode, print a newline to prepare for the next prompt
+    if (!last_was_background)
+    {
+        cout << flush;
     }
 }
 
