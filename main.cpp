@@ -446,7 +446,6 @@ void executeCommands(const vector<Command> &commands)
             background_command |= cmd.isBackground;
 
             // Execute pipeline if this is the end of a pipeline or a standalone command
-            // Execute pipeline if this is the end of a pipeline or a standalone command
             if (!cmd.isPipeStart)
             {
                 executePipeline(current_pipeline);
@@ -476,13 +475,6 @@ void executeCommands(const vector<Command> &commands)
             background_command = false;
         }
 
-        cout << flush;
-    }
-
-    // After all commands are executed, if the last one was not a background command,
-    // or if we're in interactive mode, print a newline to prepare for the next prompt
-    if (!last_was_background)
-    {
         cout << flush;
     }
 }
