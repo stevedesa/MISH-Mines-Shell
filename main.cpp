@@ -148,6 +148,12 @@ vector<Command> parseTokens(const vector<string> &tokens)
                 commands.push_back(currentCommand);
                 currentCommand = Command();
             }
+
+            // Ensure all previous pipeline commands are marked as background
+            for (auto &cmd : commands)
+            {
+                cmd.isBackground = true;
+            }
         }
         else if (tokens[i] == ">" || tokens[i] == ">>") // Handle output redirection
         {
@@ -403,19 +409,6 @@ void executePipeline(vector<Command> &pipeline)
         // For background processes, print the process ID without a newline
         cout << "[" << pids.back() << "] " << pipeline.back().tokens[0] << " &" << endl;
         cout.flush();
-
-        // Create a separate process to wait for the pipeline
-        pid_t wait_pid = fork();
-        if (wait_pid == 0)
-        { // Child process for waiting
-            // Wait for all processes in the pipeline
-            for (pid_t pid : pids)
-            {
-                int status;
-                waitpid(pid, &status, 0);
-            }
-            exit(0);
-        }
     }
 }
 
