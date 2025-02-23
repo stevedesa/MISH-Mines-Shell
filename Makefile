@@ -32,8 +32,8 @@ clean:
 # CXX = gcc
 # CXXFLAGS = -std=c++17 -Wall -Wextra -O2
 # LDFLAGS = -lstdc++
-# TARGET = my_program
-# SRC = main.cpp utils.cpp
+# TARGET = mish
+# SRC = main.cpp helper.cpp
 # OBJ = $(SRC:.cpp=.o)
 
 # $(TARGET): $(OBJ)
