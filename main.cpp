@@ -549,7 +549,7 @@ int main(int argc, char *argv[])
         char *path = getenv("PATH");
         if (path)
         {
-            env.set("PATH", path, 1);
+            env.set("PATH", path);
         }
 
         if (scriptArgIndex >= argc)
