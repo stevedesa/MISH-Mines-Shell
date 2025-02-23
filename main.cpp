@@ -356,6 +356,15 @@ void executePipeline(vector<Command> &pipeline)
     {
         // For background processes, print the process ID and continue
         cout << "[" << pids.back() << "] " << pipeline.back().tokens[0] << " &" << endl;
+        // Explicitly reprint the prompt since it doesn't show up
+        if (showPath && getcwd(cwd, sizeof(cwd)) != nullptr)
+        {
+            cout << "mish:" << cwd << "> ";
+        }
+        else
+        {
+            cout << "mish> ";
+        }
     }
 }
 
