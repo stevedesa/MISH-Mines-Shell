@@ -16,7 +16,7 @@
 #include <cstring>
 #include <memory>
 #include <stdexcept>
-
+#include <cerrno>
 using namespace std;
 
 // Structure representing a parsed command

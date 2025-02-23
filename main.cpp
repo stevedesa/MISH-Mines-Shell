@@ -1,7 +1,9 @@
 #include "mish.h"
+#include <cstdlib> // For environ
 using namespace std;
 
 bool showPath = false;
+extern char **environ;
 
 // Function to split input string into tokens while handling quotes and escape characters
 vector<string> tokenize(const string &input)

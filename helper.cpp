@@ -1,7 +1,10 @@
 #include "mish.h"
+#include <cstdlib> // For environ
+using namespace std;
 
 // Global environment object to store env variables
 Environment env;
+extern char **environ;
 
 // Function to handle errors and optionally terminate the program
 void handleError(const string &message, bool fatal)
