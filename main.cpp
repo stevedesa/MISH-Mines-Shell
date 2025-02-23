@@ -339,6 +339,7 @@ void executePipeline(vector<Command> &pipeline)
                     {
                         throw ShellError("Failed to set up pipe input");
                     }
+                    close(pipes[i - 1][0]);
                 }
                 // If this is not the last command, redirect output to the next pipe
                 if (i < n - 1)
@@ -347,6 +348,7 @@ void executePipeline(vector<Command> &pipeline)
                     {
                         throw ShellError("Failed to set up pipe output");
                     }
+                    close(pipes[i][1]);
                 }
 
                 // Close all pipe fds
@@ -406,6 +408,10 @@ void executePipeline(vector<Command> &pipeline)
     }
     else
     {
+        for (pid_t pid : pids)
+        {
+            setpgid(pid, pid); // Set a new process group to detach from the shell
+        }
         // For background processes, print the process ID without a newline
         cout << "[" << pids.back() << "] " << pipeline.back().tokens[0] << " &" << endl;
         cout.flush();
