@@ -27,3 +27,20 @@ clean:
 
 # Phony targets
 .PHONY: all clean
+
+# If you want to compile with gcc, here's the commented out code for that
+# CXX = gcc
+# CXXFLAGS = -std=c++17 -Wall -Wextra -O2
+# LDFLAGS = -lstdc++
+# TARGET = my_program
+# SRC = main.cpp utils.cpp
+# OBJ = $(SRC:.cpp=.o)
+
+# $(TARGET): $(OBJ)
+# 	$(CXX) $(OBJ) -o $(TARGET) $(LDFLAGS)
+
+# %.o: %.cpp
+# 	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# clean:
+# 	rm -f $(OBJ) $(TARGET)
