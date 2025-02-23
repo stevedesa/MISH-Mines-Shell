@@ -36,6 +36,28 @@ vector<string> tokenize(const string &input)
             continue;
         }
 
+        // Handle special characters when not in quotes
+        if (!in_quotes && (c == '|' || c == '>' || c == '<' || c == '&' || c == ';'))
+        {
+            if (!current_token.empty())
+            {
+                tokens.push_back(current_token);
+                current_token.clear();
+            }
+            // Handle ">>" as a single token
+            if (c == '>' && i + 1 < input.length() && input[i + 1] == '>')
+            {
+                tokens.push_back(">>");
+                i++;
+            }
+            else
+            {
+                tokens.push_back(string(1, c));
+            }
+            continue;
+        }
+
+        // Handle whitespace
         if (!in_quotes && (c == ' ' || c == '\t'))
         {
             if (!current_token.empty())
@@ -77,6 +99,19 @@ bool validateCommand(const Command &cmd)
         handleError("Cannot combine input redirection with pipe input");
         return false;
     }
+
+    // Check for invalid redirection combinations
+    if (cmd.redirectOutputToFile && cmd.redirectOutputFileName.empty())
+    {
+        handleError("Missing output file name");
+        return false;
+    }
+    if (cmd.redirectedInputFromFile && cmd.redirectedInputFileName.empty())
+    {
+        handleError("Missing input file name");
+        return false;
+    }
+
     // Check if the command has no tokens
     if (cmd.tokens.empty())
     {
@@ -204,13 +239,20 @@ void executeBuiltIn(const Command &cmd)
         string var_name = command.substr(0, pos);
         string var_value = pos + 1 < command.length() ? command.substr(pos + 1) : "";
 
-        if (var_value.empty())
+        if (var_name == "PATH")
         {
-            env.unset(var_name);
+            setenv("PATH", var_value.c_str(), 1);
         }
         else
         {
-            env.set(var_name, var_value);
+            if (var_value.empty())
+            {
+                unsetenv(var_name.c_str());
+            }
+            else
+            {
+                setenv(var_name.c_str(), var_value.c_str(), 1);
+            }
         }
     }
 }
@@ -273,6 +315,7 @@ void executePipeline(vector<Command> &pipeline)
     for (int i = 0; i < n; i++)
     {
         pids[i] = fork();
+
         if (pids[i] == -1)
         {
             throw ShellError("Fork failed");
@@ -499,14 +542,14 @@ int main(int argc, char *argv[])
 
         if (argc > scriptArgIndex + 1)
         {
-            handleError("Usage: ./mish [-p] [script.sh]", true);
+            handleError("Usage: ./mish [-p / script.sh]", true);
         }
 
         // Initialize environment
         char *path = getenv("PATH");
         if (path)
         {
-            env.set("PATH", path);
+            env.set("PATH", path, 1);
         }
 
         if (scriptArgIndex >= argc)
