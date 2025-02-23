@@ -420,6 +420,20 @@ void executePipeline(vector<Command> &pipeline)
         // IMMEDIATELY return control to the shell
         return;
     }
+
+    // Print the prompt again after background processes complete
+    if (pipeline.back().isBackground)
+    {
+        char cwd[PATH_MAX];
+        if (showPath && getcwd(cwd, sizeof(cwd)) != nullptr)
+        {
+            cout << "mish:" << cwd << "> " << flush;
+        }
+        else
+        {
+            cout << "mish> " << flush;
+        }
+    }
 }
 
 // Function to execute a sequence of commands, including handling built-in commands
