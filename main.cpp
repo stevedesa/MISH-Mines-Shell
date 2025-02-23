@@ -405,9 +405,6 @@ void interactiveMode()
 
     while (true)
     {
-        // Always print a newline before the prompt to ensure clean output
-        cout << endl;
-
         if (showPath && getcwd(cwd, sizeof(cwd)) != nullptr)
         {
             cout << "mish:" << cwd << "> " << flush;
