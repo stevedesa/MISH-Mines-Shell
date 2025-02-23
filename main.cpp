@@ -424,6 +424,13 @@ void executePipeline(vector<Command> &pipeline)
     // Print the prompt again after background processes complete
     if (pipeline.back().isBackground)
     {
+        // Wait for all background processes to complete
+        for (pid_t pid : pids)
+        {
+            int status;
+            waitpid(pid, &status, WNOHANG); // Non-blocking wait
+        }
+
         char cwd[PATH_MAX];
         if (showPath && getcwd(cwd, sizeof(cwd)) != nullptr)
         {
